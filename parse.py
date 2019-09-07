@@ -20,48 +20,43 @@ def err(str):
     print(''.join(['Error. ', str]))
     sys.exit()
 
+#convert xmlx to dict
+def exel_to_dict(_path : Path, _dict : dict):
+    if not _path.is_file():
+        err(''.join(['File "', str(_path), '" not exists.']))
+
+    wb = load_workbook(typo_path)
+
+    for sht in wb.sheetnames():
+        # работаем отдельно с каждым листом
+        _dict.update({sht: {}})
+        ws = wb[sht]
+
+        # инициализируем поля
+        keys = []
+        for c in range(1, ws.max_column + 1):
+            if ws.cell(1, c).value != '':
+                keys.append(ws.cell(1, c).value)
+            else:
+                break
+        # собираем данные из строк
+        for r in range(2, ws.max_row + 1):
+            values = [ws.cell(row=r,column=i).value for i in range(1,len(keys))]
+            if ''.join(values) != '':
+                _dict[sht].update(dict(zip(keys, values)))
+            else:
+                break
+    return
+
 #open temlate of typology
 typo_path = Path(path_input, typo_f_name).with_suffix(table_ext)
 
-if not typo_path.is_file():
-    err(''.join(['File "', str(typo_path), '" not exists.']))
+typo_obj = dict()
 
-typo_wb = load_workbook(typo_path)
+exel_to_dict(typo_path, typo_obj)
 
-typo_patterns = {}
+with open('test.txt') as f:
+    print(typo_obj, file = f)
 
-row_end = typo_row_start
-while (typo_wb.active.cell(row = row_end, column = typo_col_name).value != None or typo_wb.active.cell(row = row_end, column = typo_col_pattern).value != None):
-    
-    if typo_wb.active.cell(row = row_end, column = typo_col_name).value == None:
-        err(''.join(['Typology name is nulled. Str [', str(row_end), '] of "', str(typo_path), '".']))
-
-    if typo_wb.active.cell(row = row_end, column = typo_col_pattern).value == None:
-        err(''.join(['Typology pattern is nulled. Str [', str(row_end), '] of "', str(typo_path), '".']))
-
-    name = str(typo_wb.active.cell(row = row_end, column = typo_col_name).value).strip().capitalize()
-    if typo_patterns.get(name) != None:
-        err(''.join(['Typology name "', name, '" is repeated. Str [', str(row_end), '] of "', str(typo_path), '".']))
-
-    patterns = str(typo_wb.active.cell(row = row_end, column = typo_col_pattern).value).split(typo_splitter)
-    patterns = list(map(lambda x: str(x).strip().lower(), patterns))
-    typo_patterns[name] = patterns.copy()
-
-    row_end += 1
-row_end -= 1
-
-if row_end < 1:
-    err('Typology wocabulary is empty in file "', str(typo_path), '".')
-
-print('Typology file info:')
-print('\tFile name: "', typo_path, '";')
-print('\tActive sheet name: "', typo_wb.active.title, '";')
-print('\tCount of typology name: ', str(row_end - (typo_row_start - 1)), '.')
-print('')
-
-#test output
-for key in typo_patterns:
-    print(key, '=', ' | '.join(typo_patterns[key]))
-
-print('')
-print('OK')
+os.system('pause')
+exit(0)
