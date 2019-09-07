@@ -27,9 +27,9 @@ def exel_to_dict(_path : Path, _dict : dict):
 
     wb = load_workbook(typo_path)
 
-    for sht in wb.sheetnames():
+    for sht in wb.sheetnames:
         # работаем отдельно с каждым листом
-        _dict.update({sht: {}})
+        _dict.update({sht: []})
         ws = wb[sht]
 
         # инициализируем поля
@@ -41,9 +41,9 @@ def exel_to_dict(_path : Path, _dict : dict):
                 break
         # собираем данные из строк
         for r in range(2, ws.max_row + 1):
-            values = [ws.cell(row=r,column=i).value for i in range(1,len(keys))]
-            if ''.join(values) != '':
-                _dict[sht].update(dict(zip(keys, values)))
+            values = [ws.cell(row=r,column=i).value for i in range(1,len(keys)+1)]
+            if ''.join(str(i) for i in values) != '':
+                _dict[sht].append(dict(zip(keys, values)))
             else:
                 break
     return
@@ -55,7 +55,8 @@ typo_obj = dict()
 
 exel_to_dict(typo_path, typo_obj)
 
-with open('test.txt') as f:
+#for example
+with open('test.txt', 'w') as f:
     print(typo_obj, file = f)
 
 os.system('pause')
