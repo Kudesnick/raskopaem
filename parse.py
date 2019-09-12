@@ -6,11 +6,12 @@ import random
 from timeit import default_timer
 from pathlib import Path
 from openpyxl import load_workbook
+from openpyxl import Workbook
 
 time_start = default_timer()
 
 # constants
-curr_encoding = 'windows-1251'
+curr_encoding = 'utf-8'
 path_input = 'input'
 path_output = 'output'
 table_ext = '.xlsx'
@@ -151,10 +152,18 @@ logfile.close()
 
 print('saving results..')
 
-#for example
-with open(Path(path_output, 'test.txt'), 'w') as f:
-    print(typo_obj, file = f)
-    print(lists_obj, file = f)
+# create new lists and save
+wr_wb = Workbook()
+
+for year, rows in lists_obj.items():
+    print('{}..'.format(str(year)))
+    sheet = wr_wb.create_sheet(title = str(year))
+    sh_lst = list().append(rows[0].keys())
+    for r in rows:
+        sh_lst.append(r.values())
+    sheet.add_table(sh_lst)
+
+wr_wb.save(Path(path_output, typo_f_name).with_suffix(table_ext))
 
 print('complete!')
 print('{} sec'.format(str(default_timer() - time_start)))
