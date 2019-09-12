@@ -2,8 +2,12 @@
 
 import sys
 import os
+import random
+from timeit import default_timer
 from pathlib import Path
 from openpyxl import load_workbook
+
+time_start = default_timer()
 
 # constants
 curr_encoding = 'windows-1251'
@@ -30,6 +34,7 @@ def exel_to_dict(_path : Path):
     wb = load_workbook(_path)
 
     for sht in wb.sheetnames:
+        print('{}..'.format(str(sht)))
         # работаем отдельно с каждым листом
         result.update({sht: []})
         ws = wb[sht]
@@ -50,6 +55,8 @@ def exel_to_dict(_path : Path):
                 break
     return result
 
+print('typology parsing..')
+
 #open temlate of typology
 typo_path = Path(path_input, typo_f_name).with_suffix(table_ext)
 typo_obj = exel_to_dict(typo_path)
@@ -57,6 +64,8 @@ typo_obj = exel_to_dict(typo_path)
 #convert typology objects
 for i in typo_obj['table_tipology']:
     i['variants'] = list(map(lambda x: str(x).strip().lower(), i['variants'].split(typo_splitter)))
+
+print('lists parsing..')
 
 #open main lists
 lists_path = Path(path_input, lists_f_name).with_suffix(table_ext)
@@ -71,22 +80,81 @@ def get_typo(_str : str):
                 return i['alias']
     return ''
 
-#add typology
+# get horizon
+def get_horizon(_str : str):
+    _str = _str.strip().lower()
+    for i in typo_obj['horizon']:
+        if _str == str(i['horizon']).strip().lower():
+            return [int(i['min']), int(i['max'])]
+    return get_horizon('default')
+
+# random generator init
+random.seed(1024)
+
+# open logfile
+logfile = open(Path(path_output, log_f_name), 'w')
+
+print('typologies and coordinates adding..')
+
+# add typology and coordinates
 for year, rows in lists_obj.items():
+    print('{}..'.format(str(year)))
     prev_typo = None
+    q_ltrs = 'абвгдежзиклмнопрстуфхцчшщъыьэюя'
+    prev_ltr = None
+    prev_num = None
+    prev_hor = None
     for i in rows:
+        err_arg = {'p': str(year), 'n': str(i['number'])}
+        
+        #add typology
         if i['description'] != None:
             prev_typo = get_typo(str(i['description']))
         if prev_typo == None:
-            print('Lists error! page {p}, number {n} description is invalid!')
+            print('Lists error! page {p}, number {n} description is invalid!'.format(**err_arg), file = logfile)
         else:
             i['type'] = prev_typo
+        
+        #add coord
+        if i['quad_letter'] != None:
+            ql_st = str(i['quad_letter']).strip().lower()
+            if len(ql_st) != 1:
+                prev_ltr = None
+            else:
+                prev_ltr = q_ltrs.find(ql_st)
+                if prev_ltr < 0:
+                    prev_ltr = None
+        if prev_ltr == None:
+            print('Lists error! page {p}, number {n} quad letter is invalid!'.format(**err_arg), file = logfile)
 
-log_path = Path(path_output, log_f_name)
+        if i['quad_num'] != None:
+            try:
+                prev_num = int(str(i['quad_num']).strip().lower())
+            except:
+                prev_num = None
+        if prev_num == None:
+            print('Lists error! page {p}, number {n} quad number is invalid!'.format(**err_arg), file = logfile)
+
+        if i['horizon'] != None:
+            prev_hor = get_horizon(str(i['horizon']))
+        if prev_hor == None:
+            print('Lists error! page {p}, number {n} horizon is invalid!'.format(**err_arg), file = logfile)
+
+        # set coord as is (relative quad a0), cm
+        if prev_ltr != None and prev_num != None and prev_hor != None:
+            i['coord'] = '{x}:{y}:{z}'.format(
+                x = str(random.randint(0, 100) + prev_ltr * 100), 
+                y = str(random.randint(0, 100) + prev_num * 100), 
+                z = str(0 - random.randint(prev_hor[0], prev_hor[1])))
+
+logfile.close()
+
+print('saving results..')
 
 #for example
-with open(log_path, 'w') as f:
+with open(Path(path_output, 'test.txt'), 'w') as f:
     print(typo_obj, file = f)
     print(lists_obj, file = f)
 
 print('complete!')
+print('{} sec'.format(str(default_timer() - time_start)))
