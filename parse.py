@@ -11,25 +11,27 @@ path_input = 'input'
 path_output = 'output'
 table_ext = '.xlsx'
 typo_f_name = 'table_tipology'
+lists_f_name = 'lists'
+log_f_name = 'log.txt'
 typo_splitter = '|'
-typo_row_start = 2
-typo_col_name = 1
-typo_col_pattern = 2
 
 def err(str):
     print(''.join(['Error. ', str]))
     sys.exit()
 
 #convert xmlx to dict
-def exel_to_dict(_path : Path, _dict : dict):
+def exel_to_dict(_path : Path):
+    
+    result = dict()
+
     if not _path.is_file():
         err(''.join(['File "', str(_path), '" not exists.']))
 
-    wb = load_workbook(typo_path)
+    wb = load_workbook(_path)
 
     for sht in wb.sheetnames:
         # работаем отдельно с каждым листом
-        _dict.update({sht: []})
+        result.update({sht: []})
         ws = wb[sht]
 
         # инициализируем поля
@@ -43,21 +45,28 @@ def exel_to_dict(_path : Path, _dict : dict):
         for r in range(2, ws.max_row + 1):
             values = [ws.cell(row=r,column=i).value for i in range(1,len(keys)+1)]
             if ''.join(str(i) for i in values) != '':
-                _dict[sht].append(dict(zip(keys, values)))
+                result[sht].append(dict(zip(keys, values)))
             else:
                 break
-    return
+    return result
 
 #open temlate of typology
 typo_path = Path(path_input, typo_f_name).with_suffix(table_ext)
+typo_obj = exel_to_dict(typo_path)
 
-typo_obj = dict()
+#convert typology objects
+for i in typo_obj['table_tipology']:
+    i['variants'] = list(map(lambda x: str(x).strip().lower(), i['variants'].split(typo_splitter)))
 
-exel_to_dict(typo_path, typo_obj)
+#open main lists
+lists_path = Path(path_input, lists_f_name).with_suffix(table_ext)
+lists_obj = exel_to_dict(lists_path)
+
+log_path = Path(path_output, log_f_name)
 
 #for example
-with open('test.txt', 'w') as f:
+with open(log_path, 'w') as f:
     print(typo_obj, file = f)
+    print(lists_obj, file = f)
 
-os.system('pause')
-exit(0)
+print('complete!')
