@@ -62,6 +62,26 @@ for i in typo_obj['table_tipology']:
 lists_path = Path(path_input, lists_f_name).with_suffix(table_ext)
 lists_obj = exel_to_dict(lists_path)
 
+#return typology from string
+def get_typo(_str : str):
+    _str = _str.strip().lower()
+    for i in typo_obj['table_tipology']:
+        for j in i['variants']:
+            if _str.find(j) != -1:
+                return i['alias']
+    return ''
+
+#add typology
+for year, rows in lists_obj.items():
+    prev_typo = None
+    for i in rows:
+        if i['description'] != None:
+            prev_typo = get_typo(str(i['description']))
+        if prev_typo == None:
+            print('Lists error! page {p}, number {n} description is invalid!')
+        else:
+            i['type'] = prev_typo
+
 log_path = Path(path_output, log_f_name)
 
 #for example
