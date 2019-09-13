@@ -77,7 +77,12 @@ def get_typo(_str : str):
     _str = _str.strip().lower()
     for i in typo_obj['table_tipology']:
         for j in i['variants']:
-            if _str.find(j) != -1:
+            result = True
+            for k in j.split():
+                if len(k) > 2 and _str.find(k) < 0:
+                    result = False
+                    break
+            if result == True:
                 return i['alias']
     return ''
 
