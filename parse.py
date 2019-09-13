@@ -128,18 +128,26 @@ for year, rows in lists_obj.items():
         #add coord
         if i['quad_letter'] != None:
             ql_st = str(i['quad_letter']).strip().lower()
-            if len(ql_st) != 1:
+            if len(ql_st) < 1:
                 prev_ltr = None
             else:
-                prev_ltr = q_ltrs.find(ql_st)
-                if prev_ltr < 0:
+                prev_ltr = [q_ltrs.find(ql_st)]
+                prev_ltr.append(prev_ltr[0] + len(ql_st) - 1)
+                if prev_ltr[0] < 0 or prev_ltr[1] < 0 or prev_ltr[0] > prev_ltr[1]:
                     prev_ltr = None
         if prev_ltr == None:
             print('Lists error! page {p}, number {n} quad letter is invalid!'.format(**err_arg), file = logfile)
 
         if i['quad_num'] != None:
+            qn_ls = str(i['quad_num']).split('-')
             try:
-                prev_num = int(str(i['quad_num']).strip().lower())
+                prev_num = [int(str(qn_ls[0]).strip().lower())]
+                if len(qn_ls) < 2:
+                    prev_num.append(prev_num[0])
+                else:
+                    prev_num.append(int(str(qn_ls[1]).strip().lower()))
+                if (prev_num[0] > prev_num[1]):
+                    prev_num = None
             except:
                 prev_num = None
         if prev_num == None:
@@ -153,8 +161,8 @@ for year, rows in lists_obj.items():
         # set coord as is (relative quad a0), cm
         if prev_ltr != None and prev_num != None and prev_hor != None:
             i['coord'] = '{x}:{y}:{z}'.format(
-                x = str(random.randint(0, 100) + prev_ltr * 100), 
-                y = str(random.randint(0, 100) + prev_num * 100), 
+                x = str(random.randint(prev_ltr[0] * 100, prev_ltr[1] * 100 + 100)),
+                y = str(random.randint(prev_num[0] * 100, prev_num[1] * 100 + 100)),
                 z = str(0 - random.randint(prev_hor[0], prev_hor[1])))
 
 logfile.close()
