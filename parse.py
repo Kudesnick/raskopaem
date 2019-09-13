@@ -13,10 +13,10 @@ time_start = default_timer()
 # constants
 curr_encoding = 'utf-8'
 path_input = 'input'
-path_output = 'output'
 table_ext = '.xlsx'
 typo_f_name = 'table_tipology'
 lists_f_name = 'lists'
+out_f_name = 'lists_out'
 log_f_name = 'log.txt'
 typo_splitter = '|'
 
@@ -93,7 +93,7 @@ def get_horizon(_str : str):
 random.seed(1024)
 
 # open logfile
-logfile = open(Path(path_output, log_f_name), 'w')
+logfile = open(Path(path_input, log_f_name), 'w')
 
 print('typologies and coordinates adding..')
 
@@ -105,12 +105,16 @@ for year, rows in lists_obj.items():
     prev_ltr = None
     prev_num = None
     prev_hor = None
+    prev_desc = None
     for i in rows:
         err_arg = {'p': str(year), 'n': str(i['number'])}
         
         #add typology
         if i['description'] != None:
+            prev_desc = i['description']
             prev_typo = get_typo(str(i['description']))
+        else:
+            i['description'] = prev_desc
         if prev_typo == None:
             print('Lists error! page {p}, number {n} description is invalid!'.format(**err_arg), file = logfile)
         else:
@@ -158,12 +162,11 @@ wr_wb = Workbook()
 for year, rows in lists_obj.items():
     print('{}..'.format(str(year)))
     sheet = wr_wb.create_sheet(title = str(year))
-    sh_lst = list().append(rows[0].keys())
+    sheet.append(list(rows[0].keys()))
     for r in rows:
-        sh_lst.append(r.values())
-    sheet.add_table(sh_lst)
+        sheet.append(list(r.values()))
 
-wr_wb.save(Path(path_output, typo_f_name).with_suffix(table_ext))
+wr_wb.save(Path(path_input, out_f_name).with_suffix(table_ext))
 
 print('complete!')
 print('{} sec'.format(str(default_timer() - time_start)))
