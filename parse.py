@@ -133,8 +133,10 @@ for year, rows in lists_obj.items():
             else:
                 prev_ltr = [q_ltrs.find(ql_st)]
                 prev_ltr.append(prev_ltr[0] + len(ql_st) - 1)
-                if prev_ltr[0] < 0 or prev_ltr[1] < 0 or prev_ltr[0] > prev_ltr[1]:
+                if prev_ltr[0] < 0 or prev_ltr[1] < 0:
                     prev_ltr = None
+                elif prev_ltr[0] > prev_ltr[1]:
+                    prev_ltr[0], prev_ltr[1] = prev_ltr[1], prev_ltr[0]
         if prev_ltr == None:
             print('Lists error! page {p}, number {n} quad letter is invalid!'.format(**err_arg), file = logfile)
 
@@ -147,7 +149,7 @@ for year, rows in lists_obj.items():
                 else:
                     prev_num.append(int(str(qn_ls[1]).strip().lower()))
                 if (prev_num[0] > prev_num[1]):
-                    prev_num = None
+                    prev_num[1], prev_num[0] = prev_num[0], prev_num[1]
             except:
                 prev_num = None
         if prev_num == None:
