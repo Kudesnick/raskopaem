@@ -114,9 +114,9 @@ for year, rows in lists_obj.items():
 
     description_str = None
 
-    for i in rows:
-        first_row = bool(i == rows[0])
-        err_arg = {'p': str(year), 'n': str(i['number'])}
+    for n, i in enumerate(rows):
+        first_row = bool(n == 0)
+        err_str = 'Lists error! page {p}, row {n} '.format(p = str(year), n = str(n))
         
         # set typology
         if i['description'] != None:
@@ -124,8 +124,7 @@ for year, rows in lists_obj.items():
             description_str = i['description']
         if prev_typo == None:
             if i['description'] == None and not first_row: continue
-            print('Lists error! page {p}, number {n} description is invalid!'.format(**err_arg),
-                  '"{}"'.format(str(i['description'])), file = logfile)
+            print('{}description is invalid! "{}"'.format(err_str, str(i['description'])), file = logfile)
         else:
             i['type'] = prev_typo
             i['description'] = description_str
@@ -143,8 +142,7 @@ for year, rows in lists_obj.items():
                     prev_ltr = None
         if prev_ltr == None:
             if i['quad_letter'] == None and not first_row: continue
-            print('Lists error! page {p}, number {n} quad letter is invalid!'.format(**err_arg),
-                  '"{}"'.format(str(i['quad_letter'])), file = logfile)
+            print('{}quad letter is invalid! "{}"'.format(err_str, str(i['quad_letter'])), file = logfile)
 
         # add quad number
         if i['quad_num'] != None:
@@ -164,16 +162,14 @@ for year, rows in lists_obj.items():
                 prev_num = None
         if prev_num == None:
             if i['quad_num'] == None and not first_row: continue
-            print('Lists error! page {p}, number {n} quad number is invalid!'.format(**err_arg),
-            '"{}"'.format(str(i['quad_num'])), file = logfile)
+            print('{}quad number is invalid! "{}"'.format(err_str, str(i['quad_num'])), file = logfile)
 
         # add horizon
         if i['horizon'] != None:
             prev_hor = get_horizon(str(i['horizon']))
         if prev_hor == None:
             if i['horizon'] == None and not first_row: continue
-            print('Lists error! page {p}, number {n} horizon is invalid!'.format(**err_arg),
-            '"{}"'.format(str(i['horizon'])), file = logfile)
+            print('{}horizon is invalid! "{}"'.format(err_str, str(i['horizon'])), file = logfile)
 
         # set coord as is (relative quad a0), cm
         if prev_ltr != None and prev_num != None and prev_hor != None:
