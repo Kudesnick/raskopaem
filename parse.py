@@ -11,7 +11,7 @@ from openpyxl import Workbook
 time_start = default_timer()
 
 # constants
-curr_encoding = 'utf-8'
+curr_encoding = 'windows-1251'
 path_input = 'input'
 table_ext = '.xlsx'
 typo_f_name = 'table_tipology'
@@ -84,7 +84,7 @@ def get_typo(_str : str):
                     break
             if result == True:
                 return i['alias']
-    return ''
+    return None
 
 # get horizon
 def get_horizon(_str : str):
@@ -98,67 +98,78 @@ def get_horizon(_str : str):
 random.seed(1024)
 
 # open logfile
-logfile = open(Path(path_input, log_f_name), 'w')
+logfile = open(Path(path_input, log_f_name), 'w', encoding = curr_encoding)
 
 print('typologies and coordinates adding..')
 
 # add typology and coordinates
 for year, rows in lists_obj.items():
     print('{}..'.format(str(year)))
-    prev_typo = None
+
     q_ltrs = 'абвгдежзиклмнопрстуфхцчшщъыьэюя'
     prev_ltr = None
     prev_num = None
     prev_hor = None
-    prev_desc = None
-    for i in rows:
-        err_arg = {'p': str(year), 'n': str(i['number'])}
+    prev_typo = None
+
+    description_str = None
+
+    for n, i in enumerate(rows):
+        first_row = bool(n == 0)
+        err_str = 'Lists error! page {p}, row {n} '.format(p = str(year), n = str(n))
         
-        #add typology
+        # set typology
         if i['description'] != None:
-            prev_desc = i['description']
             prev_typo = get_typo(str(i['description']))
-        else:
-            i['description'] = prev_desc
+            description_str = i['description']
         if prev_typo == None:
-            print('Lists error! page {p}, number {n} description is invalid!'.format(**err_arg), file = logfile)
+            if i['description'] == None and not first_row: continue
+            print('{}description is invalid! "{}"'.format(err_str, str(i['description'])), file = logfile)
         else:
             i['type'] = prev_typo
+            i['description'] = description_str
         
-        #add coord
+        # add quad letter
         if i['quad_letter'] != None:
             ql_st = str(i['quad_letter']).strip().lower()
             if len(ql_st) < 1:
                 prev_ltr = None
             else:
+                if q_ltrs.find(ql_st) < 0: ql_st = ql_st[::-1] # slice string
                 prev_ltr = [q_ltrs.find(ql_st)]
                 prev_ltr.append(prev_ltr[0] + len(ql_st) - 1)
                 if prev_ltr[0] < 0 or prev_ltr[1] < 0:
                     prev_ltr = None
-                elif prev_ltr[0] > prev_ltr[1]:
-                    prev_ltr[0], prev_ltr[1] = prev_ltr[1], prev_ltr[0]
         if prev_ltr == None:
-            print('Lists error! page {p}, number {n} quad letter is invalid!'.format(**err_arg), file = logfile)
+            if i['quad_letter'] == None and not first_row: continue
+            print('{}quad letter is invalid! "{}"'.format(err_str, str(i['quad_letter'])), file = logfile)
 
+        # add quad number
         if i['quad_num'] != None:
             qn_ls = str(i['quad_num']).split('-')
-            try:
-                prev_num = [int(str(qn_ls[0]).strip().lower())]
-                if len(qn_ls) < 2:
-                    prev_num.append(prev_num[0])
-                else:
-                    prev_num.append(int(str(qn_ls[1]).strip().lower()))
-                if (prev_num[0] > prev_num[1]):
-                    prev_num[1], prev_num[0] = prev_num[0], prev_num[1]
-            except:
+            if 1 <= len(qn_ls) <= 2:
+                try:
+                    prev_num = [int(str(qn_ls[0]).strip().lower())]
+                    if len(qn_ls) < 2:
+                        prev_num.append(prev_num[0])
+                    else:
+                        prev_num.append(int(str(qn_ls[1]).strip().lower()))
+                    if (prev_num[0] > prev_num[1]):
+                        prev_num[1], prev_num[0] = prev_num[0], prev_num[1]
+                except:
+                    prev_num = None
+            else:
                 prev_num = None
         if prev_num == None:
-            print('Lists error! page {p}, number {n} quad number is invalid!'.format(**err_arg), file = logfile)
+            if i['quad_num'] == None and not first_row: continue
+            print('{}quad number is invalid! "{}"'.format(err_str, str(i['quad_num'])), file = logfile)
 
+        # add horizon
         if i['horizon'] != None:
             prev_hor = get_horizon(str(i['horizon']))
         if prev_hor == None:
-            print('Lists error! page {p}, number {n} horizon is invalid!'.format(**err_arg), file = logfile)
+            if i['horizon'] == None and not first_row: continue
+            print('{}horizon is invalid! "{}"'.format(err_str, str(i['horizon'])), file = logfile)
 
         # set coord as is (relative quad a0), cm
         if prev_ltr != None and prev_num != None and prev_hor != None:
