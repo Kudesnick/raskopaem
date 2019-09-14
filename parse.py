@@ -11,7 +11,7 @@ from openpyxl import Workbook
 time_start = default_timer()
 
 # constants
-curr_encoding = 'utf-8'
+curr_encoding = 'windows-1251'
 path_input = 'input'
 table_ext = '.xlsx'
 typo_f_name = 'table_tipology'
@@ -98,7 +98,7 @@ def get_horizon(_str : str):
 random.seed(1024)
 
 # open logfile
-logfile = open(Path(path_input, log_f_name), 'w')
+logfile = open(Path(path_input, log_f_name), 'w', encoding = curr_encoding)
 
 print('typologies and coordinates adding..')
 
@@ -136,12 +136,11 @@ for year, rows in lists_obj.items():
             if len(ql_st) < 1:
                 prev_ltr = None
             else:
+                if q_ltrs.find(ql_st) < 0: ql_st = ql_st[::-1] # slice string
                 prev_ltr = [q_ltrs.find(ql_st)]
                 prev_ltr.append(prev_ltr[0] + len(ql_st) - 1)
                 if prev_ltr[0] < 0 or prev_ltr[1] < 0:
                     prev_ltr = None
-                elif prev_ltr[0] > prev_ltr[1]:
-                    prev_ltr[0], prev_ltr[1] = prev_ltr[1], prev_ltr[0]
         if prev_ltr == None:
             if i['quad_letter'] == None and not first_row: continue
             print('Lists error! page {p}, number {n} quad letter is invalid!'.format(**err_arg),
