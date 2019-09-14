@@ -113,6 +113,11 @@ for year, rows in lists_obj.items():
     prev_typo = None
 
     description_str = None
+    horizon_str = None
+    quad_letter_str = None
+    quad_num_str = None
+    locate_str = None
+    year_str = None
 
     for n, i in enumerate(rows):
         first_row = bool(n == 0)
@@ -120,8 +125,8 @@ for year, rows in lists_obj.items():
         
         # set typology
         if i['description'] != None:
-            prev_typo = get_typo(str(i['description']))
             description_str = i['description']
+            prev_typo = get_typo(str(i['description']))
         if prev_typo == None:
             if i['description'] == None and not first_row: continue
             print('{}description is invalid! "{}"'.format(err_str, str(i['description'])), file = logfile)
@@ -131,6 +136,7 @@ for year, rows in lists_obj.items():
         
         # add quad letter
         if i['quad_letter'] != None:
+            quad_letter_str = i['quad_letter']
             ql_st = str(i['quad_letter']).strip().lower()
             if len(ql_st) < 1:
                 prev_ltr = None
@@ -146,6 +152,7 @@ for year, rows in lists_obj.items():
 
         # add quad number
         if i['quad_num'] != None:
+            quad_num_str = i['quad_num']
             qn_ls = str(i['quad_num']).split('-')
             if 1 <= len(qn_ls) <= 2:
                 try:
@@ -166,6 +173,7 @@ for year, rows in lists_obj.items():
 
         # add horizon
         if i['horizon'] != None:
+            horizon_str = i['horizon']
             prev_hor = get_horizon(str(i['horizon']))
         if prev_hor == None:
             if i['horizon'] == None and not first_row: continue
@@ -177,6 +185,19 @@ for year, rows in lists_obj.items():
                 x = str(random.randint(prev_ltr[0] * 100, prev_ltr[1] * 100 + 100)),
                 y = str(random.randint(prev_num[0] * 100, prev_num[1] * 100 + 100)),
                 z = str(0 - random.randint(prev_hor[0], prev_hor[1])))
+            if i['quad_letter'] == None: i['quad_letter'] = quad_letter_str
+            if i['quad_num']    == None: i['quad_num']    = quad_num_str
+            if i['horizon']     == None: i['horizon']     = horizon_str
+
+        # flood void fields
+        if i['locate'] != None: locate_str  = i['locate']
+        else:                   i['locate'] = locate_str
+        if i['year']   != None: year_str    = i['year']
+        else:                   i['year']   = year_str
+
+        # coorect numbers
+        if i['number'] != None:
+           i['number'] = str(i['number']).replace('\r', ' ').replace('\n', ' ')
 
 logfile.close()
 
