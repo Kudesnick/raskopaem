@@ -1,7 +1,7 @@
 @echo off
 SetLocal
 
-python parse.py
+parse.exe
 
 EndLocal
 pause
