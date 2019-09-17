@@ -123,7 +123,7 @@ for year, rows in lists_obj.items():
 
     for n, i in enumerate(rows):
         first_row = bool(n == 0)
-        err_str = 'Lists error! page {p}, row {n} '.format(p = str(year), n = str(n))
+        err_str = 'Lists error! page {p}, row {n} '.format(p = str(year), n = str(n + 2))
         
         # set typology
         if i['description'] != None:
