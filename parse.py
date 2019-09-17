@@ -19,6 +19,7 @@ lists_f_name = 'lists'
 out_f_name = 'lists_out'
 log_f_name = 'log.txt'
 typo_splitter = '|'
+q = 100
 
 def err(str):
     print(''.join(['Error. ', str]))
@@ -106,11 +107,12 @@ print('typologies and coordinates adding..')
 for year, rows in lists_obj.items():
     print('{}..'.format(str(year)))
 
-    q_ltrs = 'абвгдежзиклмнопрстуфхцчшщъыьэюя'
     prev_ltr = None
     prev_num = None
     prev_hor = None
     prev_typo = None
+    prev_locate = None
+    q_ltrs = None
 
     description_str = None
     horizon_str = None
@@ -134,18 +136,39 @@ for year, rows in lists_obj.items():
             i['type'] = prev_typo
             i['description'] = description_str
         
+        # add locale
+        if i['locate'] != None:
+            locate_str = str(i['locate'])
+            try:
+                prev_locate = int(i['locate'])
+            except:
+                prev_locate = None
+            if prev_locate != None:
+                q_ltrs = None 
+                for loc in typo_obj['locate']:
+                    if int(loc['number']) == prev_locate:
+                        q_ltrs = str(loc['letters'])
+                        break
+                if q_ltrs == None:
+                    prev_locate = None
+        if prev_locate == None:
+            if i['locate'] == None and not first_row: continue
+            print('{}locate is invalid! "{}"'.format(err_str, str(i['locate'])), file = logfile)
+
         # add quad letter
         if i['quad_letter'] != None:
             quad_letter_str = i['quad_letter']
             ql_st = str(i['quad_letter']).strip().lower()
             if len(ql_st) < 1:
                 prev_ltr = None
-            else:
+            elif q_ltrs != None:
                 if q_ltrs.find(ql_st) < 0: ql_st = ql_st[::-1] # slice string
                 prev_ltr = [q_ltrs.find(ql_st)]
                 prev_ltr.append(prev_ltr[0] + len(ql_st) - 1)
                 if prev_ltr[0] < 0 or prev_ltr[1] < 0:
                     prev_ltr = None
+            else:
+                prev_ltr = None
         if prev_ltr == None:
             if i['quad_letter'] == None and not first_row: continue
             print('{}quad letter is invalid! "{}"'.format(err_str, str(i['quad_letter'])), file = logfile)
@@ -180,18 +203,25 @@ for year, rows in lists_obj.items():
             print('{}horizon is invalid! "{}"'.format(err_str, str(i['horizon'])), file = logfile)
 
         # set coord as is (relative quad a0), cm
-        if prev_ltr != None and prev_num != None and prev_hor != None:
+        if prev_locate != None and prev_ltr != None and prev_num != None and prev_hor != None:
+            
+            offset = 0
+            for loc in typo_obj['locate']:
+                if int(loc['number']) == prev_locate:
+                    break
+                else:
+                    offset = offset + len(str(loc['letters']))
+
             i['coord'] = '{x}:{y}:{z}'.format(
-                x = str(random.randint(prev_ltr[0] * 100, prev_ltr[1] * 100 + 100)),
-                y = str(random.randint(prev_num[0] * 100, prev_num[1] * 100 + 100)),
+                x = str(random.randint(prev_ltr[0] * q, prev_ltr[1] * q + q) + offset * q),
+                y = str(random.randint(prev_num[0] * q, prev_num[1] * q + q)),
                 z = str(0 - random.randint(prev_hor[0], prev_hor[1])))
             if i['quad_letter'] == None: i['quad_letter'] = quad_letter_str
             if i['quad_num']    == None: i['quad_num']    = quad_num_str
             if i['horizon']     == None: i['horizon']     = horizon_str
+            if i['locate']      == None: i['locate']      = locate_str
 
         # flood void fields
-        if i['locate'] != None: locate_str  = i['locate']
-        else:                   i['locate'] = locate_str
         if i['year']   != None: year_str    = i['year']
         else:                   i['year']   = year_str
 
