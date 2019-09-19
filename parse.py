@@ -10,6 +10,13 @@ from openpyxl import Workbook
 
 time_start = default_timer()
 
+print('''
+Typology parser 2019.
+author: Stulov Tikhon (aka Kudesnick)
+mailto: kudesnick@inbox.ru
+git: https://github.com/Kudesnick/raskopaem.git
+''')
+
 # constants
 curr_encoding = 'windows-1251'
 path_input = 'input'
@@ -280,7 +287,13 @@ for year, rows in lists_obj.items():
     for r in rows:
         sheet.append(list(r.values()))
 
-wr_wb.save(Path(path_input, out_f_name).with_suffix(table_ext))
+while True:
+    fpath = Path(path_input, out_f_name).with_suffix(table_ext)
+    try:
+        wr_wb.save(fpath)
+        break
+    except:
+        input('File "{}" access denied. May be this file is opened. Close file ant try again (press Enter).'.format(fpath))
 
 print('complete!')
 print('{} sec'.format(str(default_timer() - time_start)))
