@@ -19,7 +19,6 @@ lists_f_name = 'lists'
 out_f_name = 'lists_out'
 log_f_name = 'log.txt'
 typo_splitter = '|'
-q = 100
 
 def err(str):
     print(''.join(['Error. ', str]))
@@ -59,29 +58,42 @@ def exel_to_dict(_path : Path):
 
 print('typology parsing..')
 
-#open temlate of typology
+# open temlate of typology
 typo_path = Path(path_input, typo_f_name).with_suffix(table_ext)
 typo_obj = exel_to_dict(typo_path)
 
-#convert typology objects
+# convert typology objects
 for i in typo_obj['table_tipology']:
     i['variants'] = list(map(lambda x: str(x).strip().lower(), i['variants'].split(typo_splitter)))
 
+# convert settings sheet
+sett = {row['param']: row['value'] for row in typo_obj['settings']}
+
 print('lists parsing..')
 
-#open main lists
+# open main lists
 lists_path = Path(path_input, lists_f_name).with_suffix(table_ext)
 lists_obj = exel_to_dict(lists_path)
 
-#return typology from string
+# return typology from string
 def get_typo(_str : str):
     _str = _str.strip().lower()
+    _words = []
+    if sett['word_only'] == 'y':
+        _words = _str.split()
     for i in typo_obj['table_tipology']:
         for j in i['variants']:
             result = True
             for k in j.split():
-                if len(k) > 2 and _str.find(k) < 0:
-                    result = False
+                if len(k) > 2:
+                    if sett['word_only'] == 'y':
+                        try:
+                            _words.index(k)
+                        except:
+                            result = False
+                    elif _str.find(k) < 0:
+                        result = False
+                if result == False:
                     break
             if result == True:
                 return i['alias']
@@ -212,10 +224,15 @@ for year, rows in lists_obj.items():
                 else:
                     offset = offset + len(str(loc['letters']))
 
-            i['coord'] = '{x}:{y}:{z}'.format(
-                x = str(random.randint(prev_ltr[0] * q, prev_ltr[1] * q + q) + offset * q),
-                y = str(random.randint(prev_num[0] * q, prev_num[1] * q + q)),
-                z = str(0 - random.randint(prev_hor[0], prev_hor[1])))
+            q = int(sett['quad_size'])
+            x = random.randint(prev_ltr[0] * q, prev_ltr[1] * q + q) + offset * q
+            y = random.randint(prev_num[0] * q, prev_num[1] * q + q)
+            z = random.randint(prev_hor[0], prev_hor[1])
+            if sett['neg_Z'] == 'y':
+                z = 0 - z
+
+            i['coord'] = '{x}:{y}:{z}'.format(x = x, y = y, z = z)
+
             if i['quad_letter'] == None: i['quad_letter'] = quad_letter_str
             if i['quad_num']    == None: i['quad_num']    = quad_num_str
             if i['horizon']     == None: i['horizon']     = horizon_str
