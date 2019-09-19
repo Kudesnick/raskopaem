@@ -225,11 +225,20 @@ for year, rows in lists_obj.items():
                     offset = offset + len(str(loc['letters']))
 
             q = int(sett['quad_size'])
-            x = random.randint(prev_ltr[0] * q, prev_ltr[1] * q + q) + offset * q
-            y = random.randint(prev_num[0] * q, prev_num[1] * q + q)
-            z = random.randint(prev_hor[0], prev_hor[1])
+            mul_XY = 1 / float(sett['step_XY'])
+            mul_Z  = 1 / float(sett['step_Z'])
+            x = random.randint(prev_ltr[0] * q * mul_XY, (prev_ltr[1] * q + q) * mul_XY) + offset * q * mul_XY
+            y = random.randint(prev_num[0] * q * mul_XY, (prev_num[1] * q + q) * mul_XY)
+            z = random.randint(prev_hor[0] * mul_Z, prev_hor[1] * mul_Z)
             if sett['neg_Z'] == 'y':
                 z = 0 - z
+
+            if mul_XY != 1:
+                x = float(x) / mul_XY
+                y = float(y) / mul_XY
+
+            if mul_Z != 1:
+                z = float(z) / mul_Z
 
             i['coord'] = '{x}:{y}:{z}'.format(x = x, y = y, z = z)
 
