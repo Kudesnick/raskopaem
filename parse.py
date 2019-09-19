@@ -124,14 +124,13 @@ for year, rows in lists_obj.items():
     prev_hor = None
     prev_typo = None
     prev_locate = None
+    prev_year = None
     q_ltrs = None
 
     description_str = None
     horizon_str = None
     quad_letter_str = None
     quad_num_str = None
-    locate_str = None
-    year_str = None
 
     for n, i in enumerate(rows):
         if sett['split_coord'] == 'y':
@@ -153,7 +152,6 @@ for year, rows in lists_obj.items():
         
         # add locale
         if i['locate'] != None:
-            locate_str = str(i['locate'])
             try:
                 prev_locate = int(i['locate'])
             except:
@@ -253,15 +251,20 @@ for year, rows in lists_obj.items():
             if i['quad_letter'] == None: i['quad_letter'] = quad_letter_str
             if i['quad_num']    == None: i['quad_num']    = quad_num_str
             if i['horizon']     == None: i['horizon']     = horizon_str
-            if i['locate']      == None: i['locate']      = locate_str
+            if i['locate']      == None: i['locate']      = prev_locate
 
         # flood void fields
-        if i['year']   != None: year_str    = i['year']
-        else:                   i['year']   = year_str
+        if i['year']   != None:
+            prev_year = i['year']
+        else:
+            i['year'] = prev_year
 
         # coorect numbers
         if i['number'] != None:
-           i['number'] = str(i['number']).replace('\r', ' ').replace('\n', ' ')
+            try:
+                int(i['number'])
+            except:
+                i['number'] = str(i['number']).replace('\r', ' ').replace('\n', ' ')
 
 logfile.close()
 
