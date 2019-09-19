@@ -134,6 +134,9 @@ for year, rows in lists_obj.items():
     year_str = None
 
     for n, i in enumerate(rows):
+        if sett['split_coord'] == 'y':
+            i.update({'X': None, 'Y': None, 'Z': None})
+
         first_row = bool(n == 0)
         err_str = 'Lists error! page {p}, row {n} '.format(p = str(year), n = str(n + 2))
         
@@ -241,6 +244,11 @@ for year, rows in lists_obj.items():
                 z = float(z) / mul_Z
 
             i['coord'] = '{x}:{y}:{z}'.format(x = x, y = y, z = z)
+
+            if sett['split_coord'] == 'y':
+                i['X'] = x
+                i['Y'] = y
+                i['Z'] = z
 
             if i['quad_letter'] == None: i['quad_letter'] = quad_letter_str
             if i['quad_num']    == None: i['quad_num']    = quad_num_str
