@@ -10,6 +10,13 @@ from openpyxl import Workbook
 
 time_start = default_timer()
 
+print('''
+Typology parser 2019.
+author: Stulov Tikhon (aka Kudesnick)
+mailto: kudesnick@inbox.ru
+git: https://github.com/Kudesnick/raskopaem.git
+''')
+
 # constants
 curr_encoding = 'windows-1251'
 path_input = 'input'
@@ -19,7 +26,6 @@ lists_f_name = 'lists'
 out_f_name = 'lists_out'
 log_f_name = 'log.txt'
 typo_splitter = '|'
-q = 100
 
 def err(str):
     print(''.join(['Error. ', str]))
@@ -59,29 +65,42 @@ def exel_to_dict(_path : Path):
 
 print('typology parsing..')
 
-#open temlate of typology
+# open temlate of typology
 typo_path = Path(path_input, typo_f_name).with_suffix(table_ext)
 typo_obj = exel_to_dict(typo_path)
 
-#convert typology objects
+# convert typology objects
 for i in typo_obj['table_tipology']:
     i['variants'] = list(map(lambda x: str(x).strip().lower(), i['variants'].split(typo_splitter)))
 
+# convert settings sheet
+sett = {row['param']: row['value'] for row in typo_obj['settings']}
+
 print('lists parsing..')
 
-#open main lists
+# open main lists
 lists_path = Path(path_input, lists_f_name).with_suffix(table_ext)
 lists_obj = exel_to_dict(lists_path)
 
-#return typology from string
-def get_typo(_str : str):
+# return typology from string
+def get_typo(_str : str, strip = ' '):
     _str = _str.strip().lower()
+    _words = []
+    if sett['word_only'] == 'y':
+        _words = list(map(lambda x: str(x).strip(strip), _str.split()))
     for i in typo_obj['table_tipology']:
         for j in i['variants']:
             result = True
             for k in j.split():
-                if len(k) > 2 and _str.find(k) < 0:
-                    result = False
+                if len(k) > 2:
+                    if sett['word_only'] == 'y':
+                        try:
+                            _words.index(k)
+                        except:
+                            result = False
+                    elif _str.find(k) < 0:
+                        result = False
+                if result == False:
                     break
             if result == True:
                 return i['alias']
@@ -112,23 +131,25 @@ for year, rows in lists_obj.items():
     prev_hor = None
     prev_typo = None
     prev_locate = None
+    prev_year = None
     q_ltrs = None
 
     description_str = None
     horizon_str = None
     quad_letter_str = None
     quad_num_str = None
-    locate_str = None
-    year_str = None
 
     for n, i in enumerate(rows):
+        if sett['split_coord'] == 'y':
+            i.update({'X': None, 'Y': None, 'Z': None})
+
         first_row = bool(n == 0)
         err_str = 'Lists error! page {p}, row {n} '.format(p = str(year), n = str(n + 2))
         
         # set typology
         if i['description'] != None:
             description_str = i['description']
-            prev_typo = get_typo(str(i['description']))
+            prev_typo = get_typo(str(i['description']), sett['split_symbols'])
         if prev_typo == None:
             if i['description'] == None and not first_row: continue
             print('{}description is invalid! "{}"'.format(err_str, str(i['description'])), file = logfile)
@@ -138,7 +159,6 @@ for year, rows in lists_obj.items():
         
         # add locale
         if i['locate'] != None:
-            locate_str = str(i['locate'])
             try:
                 prev_locate = int(i['locate'])
             except:
@@ -212,22 +232,46 @@ for year, rows in lists_obj.items():
                 else:
                     offset = offset + len(str(loc['letters']))
 
-            i['coord'] = '{x}:{y}:{z}'.format(
-                x = str(random.randint(prev_ltr[0] * q, prev_ltr[1] * q + q) + offset * q),
-                y = str(random.randint(prev_num[0] * q, prev_num[1] * q + q)),
-                z = str(0 - random.randint(prev_hor[0], prev_hor[1])))
+            q = int(sett['quad_size'])
+            mul_XY = 1 / float(sett['step_XY'])
+            mul_Z  = 1 / float(sett['step_Z'])
+            x = random.randint(prev_ltr[0] * q * mul_XY, (prev_ltr[1] * q + q) * mul_XY) + offset * q * mul_XY
+            y = random.randint(prev_num[0] * q * mul_XY, (prev_num[1] * q + q) * mul_XY)
+            z = random.randint(prev_hor[0] * mul_Z, prev_hor[1] * mul_Z)
+            if sett['neg_Z'] == 'y':
+                z = 0 - z
+
+            if mul_XY != 1:
+                x = float(x) / mul_XY
+                y = float(y) / mul_XY
+
+            if mul_Z != 1:
+                z = float(z) / mul_Z
+
+            i['coord'] = '{x}:{y}:{z}'.format(x = x, y = y, z = z)
+
+            if sett['split_coord'] == 'y':
+                i['X'] = x
+                i['Y'] = y
+                i['Z'] = z
+
             if i['quad_letter'] == None: i['quad_letter'] = quad_letter_str
             if i['quad_num']    == None: i['quad_num']    = quad_num_str
             if i['horizon']     == None: i['horizon']     = horizon_str
-            if i['locate']      == None: i['locate']      = locate_str
+            if i['locate']      == None: i['locate']      = prev_locate
 
         # flood void fields
-        if i['year']   != None: year_str    = i['year']
-        else:                   i['year']   = year_str
+        if i['year']   != None:
+            prev_year = i['year']
+        else:
+            i['year'] = prev_year
 
         # coorect numbers
         if i['number'] != None:
-           i['number'] = str(i['number']).replace('\r', ' ').replace('\n', ' ')
+            try:
+                int(i['number'])
+            except:
+                i['number'] = str(i['number']).replace('\r', ' ').replace('\n', ' ')
 
 logfile.close()
 
@@ -243,7 +287,13 @@ for year, rows in lists_obj.items():
     for r in rows:
         sheet.append(list(r.values()))
 
-wr_wb.save(Path(path_input, out_f_name).with_suffix(table_ext))
+while True:
+    fpath = Path(path_input, out_f_name).with_suffix(table_ext)
+    try:
+        wr_wb.save(fpath)
+        break
+    except:
+        input('File "{}" access denied. May be this file is opened. Close file ant try again (press Enter).'.format(fpath))
 
 print('complete!')
 print('{} sec'.format(str(default_timer() - time_start)))
