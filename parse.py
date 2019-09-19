@@ -83,11 +83,11 @@ lists_path = Path(path_input, lists_f_name).with_suffix(table_ext)
 lists_obj = exel_to_dict(lists_path)
 
 # return typology from string
-def get_typo(_str : str):
+def get_typo(_str : str, strip = ' '):
     _str = _str.strip().lower()
     _words = []
     if sett['word_only'] == 'y':
-        _words = _str.split()
+        _words = list(map(lambda x: str(x).strip(strip), _str.split()))
     for i in typo_obj['table_tipology']:
         for j in i['variants']:
             result = True
@@ -149,7 +149,7 @@ for year, rows in lists_obj.items():
         # set typology
         if i['description'] != None:
             description_str = i['description']
-            prev_typo = get_typo(str(i['description']))
+            prev_typo = get_typo(str(i['description']), sett['split_symbols'])
         if prev_typo == None:
             if i['description'] == None and not first_row: continue
             print('{}description is invalid! "{}"'.format(err_str, str(i['description'])), file = logfile)
