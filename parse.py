@@ -9,6 +9,8 @@ from openpyxl import load_workbook
 from openpyxl import Workbook
 import matplotlib.pyplot as plt
 from sys import argv
+import pkg_resources
+from subprocess import call
 
 time_start = default_timer()
 
@@ -30,16 +32,27 @@ out_f_name = 'lists_out'
 log_f_name = 'log.txt'
 typo_splitter = '|'
 
-def err(str):
-    print(''.join(['Error. ', str]))
+def err(_str):
+    print(''.join(['Error. ', _str]))
     sys.exit()
+
+def flag_is_set(_flag : str):
+    for i in range(1, len (argv)):
+        if argv[i] == _flag:
+            return True
+    return False
+
+# upgrade packages
+if flag_is_set('-u'):
+    print('Packages updating..')
+    packages = [dist.project_name for dist in pkg_resources.working_set]
+    call("pip install --upgrade " + ' '.join(packages), shell=True)
 
 # drawing object
 fig = None
 
-if len (argv) > 1:
-    if argv[1] == '-g':
-        fig = plt.figure(str(Path(out_f_name).with_suffix(img_ext)))
+if flag_is_set('-g'):
+    fig = plt.figure(str(Path(out_f_name).with_suffix(img_ext)))
 
 # convert xmlx to dict
 def exel_to_dict(_path : Path):
