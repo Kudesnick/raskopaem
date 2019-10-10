@@ -8,6 +8,7 @@ from pathlib import Path
 from openpyxl import load_workbook
 from openpyxl import Workbook
 import matplotlib.pyplot as plt
+from sys import argv
 
 time_start = default_timer()
 
@@ -34,7 +35,11 @@ def err(str):
     sys.exit()
 
 # drawing object
-fig = plt.figure(str(Path(out_f_name).with_suffix(img_ext)))
+fig = None
+
+if len (argv) > 1:
+    if argv[1] == '-g':
+        fig = plt.figure(str(Path(out_f_name).with_suffix(img_ext)))
 
 # convert xmlx to dict
 def exel_to_dict(_path : Path):
@@ -125,9 +130,9 @@ random.seed(1024)
 # open logfile
 logfile = open(Path(path_input, log_f_name), 'w', encoding = curr_encoding)
 
+# add typology and coordinates
 print('typologies and coordinates adding..')
 
-# add typology and coordinates
 for year, rows in lists_obj.items():
     print('{}..'.format(str(year)))
 
@@ -274,7 +279,8 @@ for year, rows in lists_obj.items():
 
             i['coord'] = '{x}:{y}:{z}'.format(x = x, y = y, z = z)
             
-            plt.scatter(x, y)
+            if fig != None:
+                plt.scatter(x, y)
 
             if sett['split_coord'] == 'y':
                 i['X'] = x
@@ -302,9 +308,9 @@ for year, rows in lists_obj.items():
 
 logfile.close()
 
+# create new lists and save
 print('saving results..')
 
-# create new lists and save
 wr_wb = Workbook()
 
 for year, rows in lists_obj.items():
@@ -322,12 +328,14 @@ while True:
     except:
         input('File "{}" access denied. May be this file is opened. Close file ant try again (press Enter).'.format(fpath))
 
-print('image creating..')
-
 # create img
-plt.savefig(Path(path_input, out_f_name).with_suffix(img_ext), fmt=img_ext.lstrip('.'))
+if fig != None:
+    print('image creating..')
+
+    plt.savefig(Path(path_input, out_f_name).with_suffix(img_ext), fmt=img_ext.lstrip('.'))
 
 print('complete!')
 print('{} sec'.format(str(default_timer() - time_start)))
 
-plt.show()
+if fig != None:
+    plt.show()
