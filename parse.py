@@ -7,6 +7,7 @@ from timeit import default_timer
 from pathlib import Path
 from openpyxl import load_workbook
 from openpyxl import Workbook
+import matplotlib.pyplot as plt
 
 time_start = default_timer()
 
@@ -21,6 +22,7 @@ git: https://github.com/Kudesnick/raskopaem.git
 curr_encoding = 'windows-1251'
 path_input = 'input'
 table_ext = '.xlsx'
+img_ext = '.png'
 typo_f_name = 'table_tipology'
 lists_f_name = 'lists'
 out_f_name = 'lists_out'
@@ -31,7 +33,10 @@ def err(str):
     print(''.join(['Error. ', str]))
     sys.exit()
 
-#convert xmlx to dict
+# drawing object
+fig = plt.figure(str(Path(out_f_name).with_suffix(img_ext)))
+
+# convert xmlx to dict
 def exel_to_dict(_path : Path):
     
     result = dict()
@@ -268,6 +273,8 @@ for year, rows in lists_obj.items():
                 z = float(z) / mul_Z
 
             i['coord'] = '{x}:{y}:{z}'.format(x = x, y = y, z = z)
+            
+            plt.scatter(x, y)
 
             if sett['split_coord'] == 'y':
                 i['X'] = x
@@ -315,5 +322,12 @@ while True:
     except:
         input('File "{}" access denied. May be this file is opened. Close file ant try again (press Enter).'.format(fpath))
 
+print('image creating..')
+
+# create img
+plt.savefig(Path(path_input, out_f_name).with_suffix(img_ext), fmt=img_ext.lstrip('.'))
+
 print('complete!')
 print('{} sec'.format(str(default_timer() - time_start)))
+
+plt.show()
