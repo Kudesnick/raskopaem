@@ -154,7 +154,7 @@ for year, rows in lists_obj.items():
         if prev_typo == None:
             if i['description'] != None or first_row:
                 print('{}description is invalid! "{}"'.format(err_str, str(i['description'])), file = logfile)
-        
+            i['type'] = 'Error!'
         else:
             i['type'] = prev_typo
             i['description'] = description_str
@@ -273,6 +273,9 @@ for year, rows in lists_obj.items():
                 i['X'] = x
                 i['Y'] = y
                 i['Z'] = z
+
+        else:
+            i['coord'] = 'Error!'
         # set coord <-
 
         # flood void fields ->
