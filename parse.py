@@ -7,7 +7,6 @@ from timeit import default_timer
 from pathlib import Path
 from openpyxl import load_workbook
 from openpyxl import Workbook
-import matplotlib.pyplot as plt
 from sys import argv
 import pkg_resources
 from subprocess import call
@@ -26,6 +25,7 @@ curr_encoding = 'windows-1251'
 path_input = 'input'
 table_ext = '.xlsx'
 img_ext = '.png'
+img_size = (32, 32) # inches
 typo_f_name = 'table_tipology'
 lists_f_name = 'lists'
 out_f_name = 'lists_out'
@@ -52,7 +52,8 @@ if flag_is_set('-u'):
 fig = None
 
 if flag_is_set('-g'):
-    fig = plt.figure(str(Path(out_f_name).with_suffix(img_ext)))
+    import matplotlib.pyplot as plt
+    fig = plt.figure(str(Path(out_f_name).with_suffix(img_ext)), figsize = img_size)
 
 # convert xmlx to dict
 def exel_to_dict(_path : Path):

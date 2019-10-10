@@ -1,7 +1,7 @@
 @echo off
 SetLocal
 
-parse.exe -g
+parse.py -u -g
 
 EndLocal
 pause
