@@ -7,6 +7,9 @@ from timeit import default_timer
 from pathlib import Path
 from openpyxl import load_workbook
 from openpyxl import Workbook
+from sys import argv
+import pkg_resources
+from subprocess import call
 
 time_start = default_timer()
 
@@ -21,17 +24,38 @@ git: https://github.com/Kudesnick/raskopaem.git
 curr_encoding = 'windows-1251'
 path_input = 'input'
 table_ext = '.xlsx'
+img_ext = '.png'
+img_size = (32, 32) # inches
 typo_f_name = 'table_tipology'
 lists_f_name = 'lists'
 out_f_name = 'lists_out'
 log_f_name = 'log.txt'
 typo_splitter = '|'
 
-def err(str):
-    print(''.join(['Error. ', str]))
+def err(_str):
+    print(''.join(['Error. ', _str]))
     sys.exit()
 
-#convert xmlx to dict
+def flag_is_set(_flag : str):
+    for i in range(1, len (argv)):
+        if argv[i] == _flag:
+            return True
+    return False
+
+# upgrade packages
+if flag_is_set('-u'):
+    print('Packages updating..')
+    packages = [dist.project_name for dist in pkg_resources.working_set]
+    call("pip install --upgrade " + ' '.join(packages), shell=True)
+
+# drawing object
+fig = None
+
+if flag_is_set('-g'):
+    import matplotlib.pyplot as plt
+    fig = plt.figure(str(Path(out_f_name).with_suffix(img_ext)), figsize = img_size)
+
+# convert xmlx to dict
 def exel_to_dict(_path : Path):
     
     result = dict()
@@ -120,9 +144,9 @@ random.seed(1024)
 # open logfile
 logfile = open(Path(path_input, log_f_name), 'w', encoding = curr_encoding)
 
+# add typology and coordinates
 print('typologies and coordinates adding..')
 
-# add typology and coordinates
 for year, rows in lists_obj.items():
     print('{}..'.format(str(year)))
 
@@ -146,17 +170,21 @@ for year, rows in lists_obj.items():
         first_row = bool(n == 0)
         err_str = 'Lists error! page {p}, row {n} '.format(p = str(year), n = str(n + 2))
         
-        # set typology
+        # set typology ->
         if i['description'] != None:
             description_str = i['description']
             prev_typo = get_typo(str(i['description']), sett['split_symbols'])
+        
         if prev_typo == None:
-            if i['description'] == None and not first_row: continue
-            print('{}description is invalid! "{}"'.format(err_str, str(i['description'])), file = logfile)
+            if i['description'] != None or first_row:
+                print('{}description is invalid! "{}"'.format(err_str, str(i['description'])), file = logfile)
+            i['type'] = 'Error!'
         else:
             i['type'] = prev_typo
             i['description'] = description_str
+        # set typology <-
         
+        #set coord ->
         # add locale
         if i['locate'] != None:
             try:
@@ -171,9 +199,13 @@ for year, rows in lists_obj.items():
                         break
                 if q_ltrs == None:
                     prev_locate = None
+        
         if prev_locate == None:
-            if i['locate'] == None and not first_row: continue
-            print('{}locate is invalid! "{}"'.format(err_str, str(i['locate'])), file = logfile)
+            if i['locate'] != None or first_row:
+                print('{}locate is invalid! "{}"'.format(err_str, str(i['locate'])), file = logfile)
+        
+        elif i['locate'] == None:
+            i['locate'] = prev_locate
 
         # add quad letter
         if i['quad_letter'] != None:
@@ -189,9 +221,13 @@ for year, rows in lists_obj.items():
                     prev_ltr = None
             else:
                 prev_ltr = None
+        
         if prev_ltr == None:
-            if i['quad_letter'] == None and not first_row: continue
-            print('{}quad letter is invalid! "{}"'.format(err_str, str(i['quad_letter'])), file = logfile)
+            if i['quad_letter'] != None or first_row:
+                print('{}quad letter is invalid! "{}"'.format(err_str, str(i['quad_letter'])), file = logfile)
+        
+        elif i['quad_letter'] == None: 
+            i['quad_letter'] = quad_letter_str
 
         # add quad number
         if i['quad_num'] != None:
@@ -210,17 +246,24 @@ for year, rows in lists_obj.items():
                     prev_num = None
             else:
                 prev_num = None
+        
         if prev_num == None:
-            if i['quad_num'] == None and not first_row: continue
-            print('{}quad number is invalid! "{}"'.format(err_str, str(i['quad_num'])), file = logfile)
+            if i['quad_num'] != None or first_row:
+                print('{}quad number is invalid! "{}"'.format(err_str, str(i['quad_num'])), file = logfile)
+
+        elif i['quad_num'] == None:
+            i['quad_num'] = quad_num_str
 
         # add horizon
         if i['horizon'] != None:
             horizon_str = i['horizon']
             prev_hor = get_horizon(str(i['horizon']))
+        
         if prev_hor == None:
-            if i['horizon'] == None and not first_row: continue
-            print('{}horizon is invalid! "{}"'.format(err_str, str(i['horizon'])), file = logfile)
+            if i['horizon'] != None or first_row:
+                print('{}horizon is invalid! "{}"'.format(err_str, str(i['horizon'])), file = logfile)
+        elif i['horizon'] == None:
+            i['horizon'] = horizon_str
 
         # set coord as is (relative quad a0), cm
         if prev_locate != None and prev_ltr != None and prev_num != None and prev_hor != None:
@@ -249,35 +292,39 @@ for year, rows in lists_obj.items():
                 z = float(z) / mul_Z
 
             i['coord'] = '{x}:{y}:{z}'.format(x = x, y = y, z = z)
+            
+            if fig != None:
+                plt.scatter(x, y)
 
             if sett['split_coord'] == 'y':
                 i['X'] = x
                 i['Y'] = y
                 i['Z'] = z
 
-            if i['quad_letter'] == None: i['quad_letter'] = quad_letter_str
-            if i['quad_num']    == None: i['quad_num']    = quad_num_str
-            if i['horizon']     == None: i['horizon']     = horizon_str
-            if i['locate']      == None: i['locate']      = prev_locate
+        else:
+            i['coord'] = 'Error!'
+        # set coord <-
 
-        # flood void fields
+        # flood void fields ->
         if i['year']   != None:
             prev_year = i['year']
         else:
             i['year'] = prev_year
+        # flood void fields <-
 
-        # coorect numbers
+        # coorect numbers ->
         if i['number'] != None:
             try:
                 int(i['number'])
             except:
                 i['number'] = str(i['number']).replace('\r', ' ').replace('\n', ' ')
+        # coorect numbers <-
 
 logfile.close()
 
+# create new lists and save
 print('saving results..')
 
-# create new lists and save
 wr_wb = Workbook()
 
 for year, rows in lists_obj.items():
@@ -295,5 +342,14 @@ while True:
     except:
         input('File "{}" access denied. May be this file is opened. Close file ant try again (press Enter).'.format(fpath))
 
+# create img
+if fig != None:
+    print('image creating..')
+
+    plt.savefig(Path(path_input, out_f_name).with_suffix(img_ext), fmt=img_ext.lstrip('.'))
+
 print('complete!')
 print('{} sec'.format(str(default_timer() - time_start)))
+
+if fig != None:
+    plt.show()
