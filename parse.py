@@ -147,6 +147,11 @@ logfile = open(Path(path_input, log_f_name), 'w', encoding = curr_encoding)
 # add typology and coordinates
 print('typologies and coordinates adding..')
 
+min_x = -1
+min_y = -1
+max_x = -1
+max_y = -1
+
 for year, rows in lists_obj.items():
     print('{}..'.format(str(year)))
 
@@ -291,11 +296,13 @@ for year, rows in lists_obj.items():
             if mul_Z != 1:
                 z = float(z) / mul_Z
 
-            i['coord'] = '{x}:{y}:{z}'.format(x = x, y = y, z = z)
-            
-            if fig != None:
-                plt.scatter(x, y)
+            if (min_x == -1 or x < min_x): min_x = x
+            if (min_y == -1 or y < min_y): min_y = y
+            if (max_x == -1 or x > max_x): max_x = x
+            if (max_y == -1 or y > max_y): max_y = y
 
+            i['coord'] = '{}:{}:{}'.format(x, y, z)
+            
             if sett['split_coord'] == 'y':
                 i['X'] = x
                 i['Y'] = y
@@ -321,6 +328,28 @@ for year, rows in lists_obj.items():
         # coorect numbers <-
 
 logfile.close()
+
+# mirror coordinates
+if (sett['mirr_x'] == 'y' or sett['mirr_y'] == 'y'):
+    print('mirroring..')
+    for year, rows in lists_obj.items():
+        print('{}..'.format(str(year)))
+        for n, i in enumerate(rows):
+            if (i['X'] != None and sett['mirr_x'] == 'y'):
+                i['X'] = max_x - int(i['X']) + min_x
+            if (i['Y'] != None and sett['mirr_y'] == 'y'):
+                i['Y'] = max_y - int(i['Y']) + min_y
+            if (i['X'] != None and i['Y'] != None and i['Z'] != None):
+                i['coord'] = '{}:{}:{}'.format(i['X'], i['Y'], i['Z'])
+
+# create scatter
+if fig != None:
+    print('scatter create..')
+    for year, rows in lists_obj.items():
+        print('{}..'.format(str(year)))
+        for n, i in enumerate(rows):
+            if (i['X'] != None and i['Y'] != None):
+                plt.scatter(i['X'], i['Y'])
 
 # create new lists and save
 print('saving results..')
