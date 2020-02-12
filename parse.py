@@ -147,6 +147,11 @@ logfile = open(Path(path_input, log_f_name), 'w', encoding = curr_encoding)
 # add typology and coordinates
 print('typologies and coordinates adding..')
 
+min_x = -1
+min_y = -1
+max_x = -1
+max_y = -1
+
 for year, rows in lists_obj.items():
     print('{}..'.format(str(year)))
 
@@ -290,6 +295,11 @@ for year, rows in lists_obj.items():
 
             if mul_Z != 1:
                 z = float(z) / mul_Z
+
+            if (min_x == -1 or x < min_x): min_x = x
+            if (min_y == -1 or y < min_y): min_y = y
+            if (max_x == -1 or x > max_x): max_x = x
+            if (max_y == -1 or y > max_y): max_y = y
 
             i['coord'] = '{x}:{y}:{z}'.format(x = x, y = y, z = z)
             
